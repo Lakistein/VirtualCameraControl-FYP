@@ -1,0 +1,11 @@
+<DAZStudioHelpFile Version="1.0" >
+	<inlineHelp>
+		<helpText description="Activate Full Screen Mode" name="DzActivateFullScreenModeAction" >
+			<toolTip>Click here to activate full screen mode.</toolTip>
+			<statusTip>Click here to activate full screen mode.</statusTip>
+			<whatsThis>
+				<![CDATA[<b>Activate Full Screen Mode:</b><br>Click here to activate full screen mode. The active viewport will consume the entire screen. Use the Esc key to exit full screen mode.]]>
+			</whatsThis>
+		</helpText>
+	</inlineHelp>
+</DAZStudioHelpFile>
