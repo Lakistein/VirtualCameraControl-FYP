@@ -1,6 +1,0 @@
-LIBRARY dzblackhole
-EXPORTS
-	getSDKVersion			@1
-	getPluginDefinition		@2
-SECTIONS
-	.data READ WRITE
