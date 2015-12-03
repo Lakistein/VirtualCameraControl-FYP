@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'VCCPane.h'
 **
-** Created: Sun 1. Nov 18:08:37 2015
+** Created: Thu 3. Dec 19:11:45 2015
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
