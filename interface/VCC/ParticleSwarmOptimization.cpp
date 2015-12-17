@@ -13,8 +13,8 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(const DzVec3 dirPOI, const 
 	_numOfParticles = 100;
 
 	c0 = 0.8;
-	c1 = 1.1;
-	c2 = 1.5;
+	c1 = 0.9;
+	c2 = 1.2;
 	for (int i = 0; i < 4; i++)
 	{
 		_points[i] = points[i];
@@ -36,7 +36,7 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(const DzVec3 dirPOI, const 
 		vec.m_z = z(gen);
 
 		int err = Error(&vec, points, nodes);
-		float angle = GetAngle(&dirPOI, &DzVec3(vec - p));
+		float angle = _dirPOI.getAngleTo(DzVec3(vec - _point)) * 180.0 / 3.14159265358979323846;
 		DzVec3 vel = DzVec3(rnd(gen), rnd(gen), rnd(gen));
 
 		if ((err == _gBest && angle < _gBestAngle) || err < _gBest)
@@ -98,9 +98,9 @@ DzVec3* ParticleSwarmOptimization::Run()
 		for (int i = 0; i < _numOfParticles; i++)
 		{
 			p = &_particles[i];
-			DzVec3 vel = c0 * p->velocity.normalized()
-				+ (c1 * rnd(gen) * (p->lBestPos - p->currPos).normalized())
-				+ (c2 * rnd(gen) * (_gBestPos - p->currPos).normalized());
+			DzVec3 vel = c0 * p->velocity
+				+ (c1 * rnd(gen) * (p->lBestPos - p->currPos))
+				+ (c2 * rnd(gen) * (_gBestPos - p->currPos));
 
 			p->velocity = vel;
 			p->currPos = p->currPos + p->velocity;
@@ -117,7 +117,7 @@ DzVec3* ParticleSwarmOptimization::Run()
 			vecPoints[i] = p->currPos;
 			int err = Error(&p->currPos, _points, _nodes);
 
-			float angle = _dirPOI.getAngleTo(p->currPos - *_point) * 180.0 / 3.14159265358979323846;
+			float angle = _dirPOI.getAngleTo(p->currPos - _point) * 180.0 / 3.14159265358979323846;
 			float angle2 = GetAngle(&_dirPOI, &DzVec3(p->currPos - *_point));
 
 			// GLOBAL
@@ -183,6 +183,7 @@ DzVec3* ParticleSwarmOptimization::Run2()
 	std::mt19937 gen(rd());
 	std::uniform_real<> rnd(0.1, 1);
 	Particle *p;
+	for (int i = 0; i < 10; i++)
 	for (int i = 0; i < _numOfParticles; i++)
 	{
 		p = &_particles[i];
@@ -205,7 +206,7 @@ DzVec3* ParticleSwarmOptimization::Run2()
 		vecPoints[i] = p->currPos;
 		int err = Error(&p->currPos, _points, _nodes);
 
-		float angle = _dirPOI.getAngleTo(p->currPos - *_point) * 180.0 / 3.14159265358979323846;
+		float angle = _dirPOI.getAngleTo(p->currPos - _point) * 180.0 / 3.14159265358979323846;
 		float angle2 = GetAngle(&_dirPOI, &DzVec3(p->currPos - *_point));
 
 		// GLOBAL

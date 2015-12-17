@@ -246,6 +246,7 @@ void VCCPane::GenerateCamera()
 	DzVec3 points[8];
 
 	DzNode *n = dzScene->findNode("head");
+	DzVec3 pnt = n->getWSPos();
 	n->getWSOrientedBox().getPoints(points);
 
 	DzBasicCamera *c = new DzBasicCamera();
@@ -253,6 +254,7 @@ void VCCPane::GenerateCamera()
 	c->setWSPos(GeneratePerfectPoint(ShotType::CloseUp));
 	c->aimAt(n->getWSPos());
 	//n->addNodeChild(c);
+	DzVec3 pnt2 = n->getWSBoundingBox().getCenter();
 
 
 	DzVec3 newPoints[4];
@@ -264,10 +266,10 @@ void VCCPane::GenerateCamera()
 
 	DzVec3 dir = DzVec3(c->getWSBoundingBox().getCenter() - n->getWSBoundingBox().getCenter()).normalized();
 
-
+	float angle = dir.getAngleTo(dir);
 	DzBox3 box = DzBox3(c->getWSPos().m_x - 200, c->getWSPos().m_y - 200, c->getWSPos().m_z - 200, c->getWSPos().m_x + 200, c->getWSPos().m_y + 200, c->getWSPos().m_z + 200);
 
-	p = new ParticleSwarmOptimization(DzVec3(c->getWSBoundingBox().getCenter() - n->getWSBoundingBox().getCenter()), n->getWSBoundingBox().getCenter(), box.getMin(), box.getMax(), newPoints, GetImportantNodes(&dzScene->nodeListIterator()));
+	p = new ParticleSwarmOptimization(dir, n->getWSBoundingBox().getCenter(), box.getMin(), box.getMax(), newPoints, GetImportantNodes(&dzScene->nodeListIterator()));
 
 	DzVec3 vec = p->GetBestPoint();
 	c->setWSPos(vec);
