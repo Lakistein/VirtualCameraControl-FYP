@@ -19,6 +19,8 @@
     <ClCompile Include="Particle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GeneticAlgorithm.cpp" />
+    <ClCompile Include="Chromosome.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="VirtualCameraControl.def" />
@@ -50,6 +52,8 @@
     <ClInclude Include="Particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GeneticAlgorithm.h" />
+    <ClInclude Include="Chromosome.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="VCCPane.h">

@@ -15,7 +15,10 @@
 #include <sstream>
 #include <ctime>
 #include "ParticleSwarmOptimization.h"
+#include "GeneticAlgorithm.h"
 #include <dzorientedbox3.h>
+#include <dznodebtn.h>
+
 namespace patch
 {
 	template < typename T > std::string to_string(const T& n)
@@ -39,16 +42,25 @@ VCCPane::VCCPane() : DzPane("Virtual Camera Control")
 	mainLyt->setMargin(margin);
 	mainLyt->setSpacing(margin);
 
+	nodeBtn = new DzNodeBtn(this);
+
 	m_output = new QTextBrowser();
 	m_output->setObjectName("SceneInfoTxtBrwsr");
 	m_output->setMinimumSize(c_minWidth, c_minHeight);
 	mainLyt->addWidget(m_output);
 
+
 	dropbtn = new QComboBox(this);
-	dropbtn->addItem("Close Face Closeup");
-	dropbtn->addItem("Medium Face Closeup");
-	dropbtn->addItem("Long Face Closeup");
+	dropbtn->addItem("Eye Level");
+	dropbtn->addItem("Face Close-Up");
+	dropbtn->addItem("Mid Body");
+	dropbtn->addItem("Long Range");
+	dropbtn->addItem("Bird Eye");
+	dropbtn->addItem("Worm Eye");
+	dropbtn->addItem("High Angle");
 	mainLyt->addWidget(dropbtn);
+
+	mainLyt->addWidget(nodeBtn);
 
 	QPushButton *btnGenerate = new QPushButton("Generate Camera", this, "Test Name");
 	mainLyt->addWidget(btnGenerate);
@@ -77,7 +89,7 @@ VCCPane::~VCCPane()
 }
 //..\..\..\..\..\exec\$(Configuration)\$(Platform)\plugins\
 
-void VCCPane::GetFourPoints(DzVec3 point, DzVec3 newPoints[4], DzVec3 allPoints[8])
+void VCCPane::GetFourPoints(DzVec3 point, DzVec3 newPoints[9], DzVec3 allPoints[8])
 {
 	float distances[8];
 	for (int i = 0; i < 8; i++)
@@ -95,9 +107,15 @@ void VCCPane::GetFourPoints(DzVec3 point, DzVec3 newPoints[4], DzVec3 allPoints[
 			}
 		}
 	}
-
-	for (int j = 0; j < 4; j++)
+	for (int j = 0; j < 4; j++) {
 		newPoints[j] = allPoints[j];
+	}
+
+	newPoints[4] = (newPoints[0] + newPoints[1]) / 2;
+	newPoints[5] = (newPoints[0] + newPoints[2]) / 2;
+	newPoints[6] = (newPoints[0] + newPoints[3]) / 2;
+	newPoints[7] = (newPoints[1] + newPoints[3]) / 2;
+	newPoints[8] = (newPoints[2] + newPoints[3]) / 2;
 }
 //void VCCPane::GetFourPoints(DzVec3 point, DzVec3 newPoints[4], DzVec3 allPoints[8])
 //{
@@ -135,54 +153,276 @@ void VCCPane::GetFourPoints(DzVec3 point, DzVec3 newPoints[4], DzVec3 allPoints[
 //		newPoints[j] = min;
 //	}
 //}
-float t = 0;
-DzVec3 VCCPane::GeneratePerfectPoint(ShotType s)
+DzVec3 VCCPane::GeneratePerfectPoint(ShotType s, DzBasicCamera *c)
 {
+	DzVec3 vec;
+	DzVec3 points[8];
+	DzVec3 newPoints[9];
+
 	switch (s)
 	{
-	case VCCPane::CloseUp: // FIX
-		DzNode *head = dzScene->findNode("head");
-		DzQuat temp = head->getWSRot();
-		head->setWSRot(DzQuat(0, 0, 0, 0));
-		float w = abs(head->getLocalBoundingBox().getMax().m_x - head->getLocalBoundingBox().getMin().m_x);
-		float h = abs(head->getLocalBoundingBox().getMax().m_y - head->getLocalBoundingBox().getMin().m_y);
-		head->setWSRot(temp);
-		DzNode *newNode = new DzNode();
-		newNode->setWSTransform(head->getWSBoundingBox().getCenter(), head->getWSRot(), head->getWSScale());
-		head->addNodeChild(newNode);
-		t = (h + w) * 5;
-		newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
-		DzVec3 point = newNode->getWSPos();
-		head->removeNodeChild(newNode);
-		delete(newNode);
-		return point;
+	case VCCPane::CloseUp: {
+		DzNode *n = nodeBtn->getNode()->findNodeChild("head", true);
+		DzVec3 vec = FaceCloseUp(n);
+		DzVec3 pnt = n->getWSPos();
+		n->getWSOrientedBox().getPoints(points);
+		GetFourPoints(vec, newPoints, points);
+		/*	DzVec3 min = c->getWSBoundingBox().getMin();
+			DzVec3 max = c->getWSBoundingBox().getMax() * 2;*/
+			//min.m_x *= 10;
+			//max.m_x *= 10;
+
+			// popravi bug
+		DzVec3 dir = DzVec3(vec - n->getWSBoundingBox().getCenter()).normalized();
+
+		float angle = dir.getAngleTo(dir);
+		DzBox3 box = DzBox3(vec.m_x - 20, vec.m_y - 10, vec.m_z - 10, vec.m_x + 20, vec.m_y + 10, vec.m_z + 20);
+
+		p = new ParticleSwarmOptimization(vec, dir, n->getWSBoundingBox().getCenter(), box.getMin(), box.getMax(), newPoints, GetImportantNodes(s, *n, &dzScene->nodeListIterator()));
+		return p->GetBestPoint();
+		break;
 	}
-	return DzVec3();
+	case VCCPane::LongRange: {
+		float dist = 0;
+		DzVec3 camAim = DzVec3();
+		vec = LongRangePoint(nodeBtn->getNode(), dist, camAim);
+		DzNode *n = nodeBtn->getNode();
+		DzVec3 pnt = n->getWSPos();
+
+		n->getWSOrientedBox().getPoints(points);
+		GetFourPoints(vec, newPoints, points);
+		/*	DzVec3 min = c->getWSBoundingBox().getMin();
+		DzVec3 max = c->getWSBoundingBox().getMax() * 2;*/
+		//min.m_x *= 10;
+		//max.m_x *= 10;
+
+		DzVec3 dir = DzVec3(vec - n->getWSBoundingBox().getCenter()).normalized();
+
+		float angle = dir.getAngleTo(dir);
+		DzBox3 box = n->getWSBoundingBox();
+		box.setMax(box.getMax() + dir  * dist);
+		box.setMin(box.getMin() + dir  * dist);
+		//DzBox3 box = DzBox3(vec.m_x - 100, vec.m_y - 100, vec.m_z - 100, vec.m_x + 100, vec.m_y + 100, vec.m_z + 100);
+
+		p = new ParticleSwarmOptimization(vec, dir, n->getWSBoundingBox().getCenter(), box.getMin(), box.getMax(), newPoints, GetImportantNodes(s, *n, &dzScene->nodeListIterator()));
+		//g = new GeneticAlgorithm(vec, dir, n->getWSBoundingBox().getCenter(), box.getMin(), box.getMax(), newPoints, GetImportantNodes(s, *n, &dzScene->nodeListIterator()));
+		c->setWSPos(p->GetBestPoint());
+		//if (p->_gBest == 8)
+		//	c->setWSPos(vec);
+		c->aimAt(camAim);
+		return p->GetBestPoint();
+		break;
+	}
+	case VCCPane::EyeLevel: {
+		DzNode *n = nodeBtn->getNode()->findNodeChild("head", true);
+		float dist = 0;
+		DzVec3 camAim = DzVec3();
+		vec = EyeLevelPoint(n, dist, camAim);
+		DzVec3 pnt = n->getWSPos();
+		n->getWSOrientedBox().getPoints(points);
+		GetFourPoints(vec, newPoints, points);
+		DzVec3 dir = DzVec3(vec - camAim).normalized();
+		DzBox3 box = n->getWSBoundingBox();
+		box.setMax(box.getMax() + dir  * dist);
+		box.setMin(box.getMin() + dir  * dist);
+
+		float angle = dir.getAngleTo(dir);
+
+		//DzBox3 box = DzBox3(b.getMin().m_x + vec.m_x + dir.m_x, b.getMin().m_y + vec.m_y + dir.m_y, b.getMin().m_z + vec.m_z + dir.m_z, b.getMax().m_x + vec.m_x + dir.m_x, b.getMax().m_y + vec.m_y + dir.m_y, b.getMax().m_z + vec.m_z + dir.m_z);
+
+		p = new ParticleSwarmOptimization(vec, dir, camAim, box.getMin(), box.getMax(), newPoints, GetImportantNodes(s, *n, &dzScene->nodeListIterator()));
+		c->setWSPos(p->GetBestPoint());
+		c->setWSRot(n->getWSRot());
+		if (p->_gBest == 4)
+			c->setWSPos(vec);
+		c->aimAt(camAim);
+		return p->GetBestPoint();
+		break;
+	}
+	case VCCPane::MidBody: {
+		float dist = 0;
+		DzVec3 camAim = DzVec3();
+		vec = LongRangePoint(nodeBtn->getNode(), dist, camAim);
+		DzNode *n = nodeBtn->getNode();
+		DzVec3 pnt = n->getWSPos();
+
+		n->getWSOrientedBox().getPoints(points);
+		GetFourPoints(vec, newPoints, points);
+		/*	DzVec3 min = c->getWSBoundingBox().getMin();
+		DzVec3 max = c->getWSBoundingBox().getMax() * 2;*/
+		//min.m_x *= 10;
+		//max.m_x *= 10;
+
+		DzVec3 dir = DzVec3(vec - n->getWSBoundingBox().getCenter()).normalized();
+
+		float angle = dir.getAngleTo(dir);
+		DzBox3 box = n->getWSBoundingBox();
+		box.setMax(box.getMax() + dir  * dist);
+		box.setMin(box.getMin() + dir  * dist);
+		//DzBox3 box = DzBox3(vec.m_x - 100, vec.m_y - 100, vec.m_z - 100, vec.m_x + 100, vec.m_y + 100, vec.m_z + 100);
+
+		p = new ParticleSwarmOptimization(vec, dir, n->getWSBoundingBox().getCenter(), box.getMin(), box.getMax(), newPoints, GetImportantNodes(s, *n, &dzScene->nodeListIterator()));
+
+		c->setWSPos(p->GetBestPoint());
+		c->aimAt(camAim);
+		return p->GetBestPoint();
+		break;
+	}
+	default: break;
+	}
+	return vec;
 }
 
-std::list<DzBox3> VCCPane::GetImportantNodes(DzNodeListIterator * nodes)
+// pokusaj da popravis kad je glava okrenuta
+DzVec3 VCCPane::EyeLevelPoint(DzNode *head, float &dist, DzVec3 & camAimAt) {
+	DzNode *lEye = head->findNodeChild("lEye", true);
+	DzNode *rEye = head->findNodeChild("rEye", true);
+	DzQuat temp = head->getWSRot();
+	DzVec3 p = (lEye->getWSPos() + rEye->getWSPos()) / 2;
+	camAimAt = p;
+
+	head->setWSRot(DzQuat(0, 0, 0, 0));
+	float w = abs(head->getLocalBoundingBox().getMax().m_x - head->getLocalBoundingBox().getMin().m_x);
+	float h = abs(head->getLocalBoundingBox().getMax().m_y - head->getLocalBoundingBox().getMin().m_y);
+	head->setWSRot(temp);
+	DzNode *newNode = new DzNode();
+	DzQuat r = head->getLocalRot();
+	DzQuat rr = head->getWSRot();
+	newNode->setWSTransform(p, head->getWSRot(), head->getWSScale());
+
+	head->addNodeChild(newNode, true);
+	float t = (h + w) / 2;
+	newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
+	//dzScene->findNodeByLabel("pp")->setWSTransform(newNode->getWSPos(), newNode->getWSRot(), newNode->getLocalScale());
+
+	dist = t;
+	DzVec3 point = newNode->getWSPos();
+	head->removeNodeChild(newNode);
+	delete(newNode);
+	return point;
+}
+DzVec3 VCCPane::FaceCloseUp(DzNode *head) {
+	DzQuat temp = head->getWSRot();
+	head->setWSRot(DzQuat(0, 0, 0, 0));
+	float w = abs(head->getLocalBoundingBox().getMax().m_x - head->getLocalBoundingBox().getMin().m_x);
+	float h = abs(head->getLocalBoundingBox().getMax().m_y - head->getLocalBoundingBox().getMin().m_y);
+	head->setWSRot(temp);
+	DzNode *newNode = new DzNode();
+	newNode->setWSTransform(head->getWSBoundingBox().getCenter(), head->getWSRot(), head->getWSScale());
+	head->addNodeChild(newNode);
+	float t = (h + w);
+	newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
+	DzVec3 point = newNode->getWSPos();
+	head->removeNodeChild(newNode);
+	delete(newNode);
+	return point;
+}
+
+DzVec3 VCCPane::MidBodyPoint(DzNode *body, float &dist, DzVec3 & camAimAt) {
+	DzQuat temp = body->getWSRot();
+	body->setWSRot(DzQuat(0, 0, 0, 0));
+	camAimAt = body->getWSBoundingBox().getCenter();
+	float w = abs(body->getLocalBoundingBox().getMax().m_x - body->getLocalBoundingBox().getMin().m_x);
+	float h = abs(body->getLocalBoundingBox().getMax().m_y - body->getLocalBoundingBox().getMin().m_y);
+	body->setWSRot(temp);
+	DzNode *newNode = new DzNode();
+	newNode->setWSTransform(body->getWSBoundingBox().getCenter(), body->getWSRot(), body->getWSScale());
+	body->addNodeChild(newNode);
+	float t = (h + w) * 1.1;
+	dist = t;
+	newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
+	DzVec3 point = newNode->getWSPos();
+	body->removeNodeChild(newNode);
+	delete(newNode);
+	return point;
+}
+
+DzVec3 VCCPane::LongRangePoint(DzNode * node, float &dist, DzVec3 & camAimAt)
+{
+	DzQuat temp = node->getWSRot();
+	node->setWSRot(DzQuat(0, 0, 0, 0));
+	camAimAt = node->getWSBoundingBox().getCenter();
+	float w = abs(node->getLocalBoundingBox().getMax().m_x - node->getLocalBoundingBox().getMin().m_x);
+	float h = abs(node->getLocalBoundingBox().getMax().m_y - node->getLocalBoundingBox().getMin().m_y);
+	node->setWSRot(temp);
+	DzNode *newNode = new DzNode();
+	newNode->setWSTransform(node->getWSBoundingBox().getCenter(), node->getWSRot(), node->getWSScale());
+	node->addNodeChild(newNode, true);
+	float t = (h + w) * 1.5;
+	dist = t;
+	newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
+	DzVec3 point = newNode->getWSPos();
+	node->removeNodeChild(newNode);
+	delete(newNode);
+	return point;
+}
+
+std::list<DzBox3> VCCPane::GetImportantNodes(VCCPane::ShotType sht, DzNode &obj, DzNodeListIterator * nodes)
 {
 	std::list<DzBox3> importantNodes;
+	std::list<QString> importantNode22s;
+	std::list<std::string> importantNode2s2s;
+
 	nodes->toFront();
 	DzNode *node;
+	DzNode *root = &obj;
+	while (root->getNodeParent() != NULL) {
+		root = root->getNodeParent();
+	}
+	int t = 0;
 	while (nodes->hasNext())
 	{
 		node = nodes->next();
-		if (node->getAssetId().contains("sphere") || node->getAssetId() == "Genesis3Female" || IsChildOf(node, "Genesis3Female")) continue;
 
+		t++;
+		if (node->getAssetId() == root->getAssetId() || node->getAssetId() == obj.getAssetId())
+			continue;
+
+		switch (sht)
+		{
+		case VCCPane::EyeLevel:
+			if (IsChildOf(node, obj.getAssetId()))
+				continue;
+			if (!node->getAssetId().contains("arm", false) || !node->getAssetId().contains("hand", false))
+				continue;
+			break;
+		case VCCPane::CloseUp:
+			break;
+		case VCCPane::MidBody:
+			break;
+		case VCCPane::LongRange:
+			if (IsChildOf(node, obj.getAssetId()))
+				continue;
+			break;
+		case VCCPane::BirdEye:
+			break;
+		case VCCPane::WormEye:
+			break;
+		case VCCPane::HighAngle:
+			break;
+		default:
+			break;
+		}
+		if (node->getAssetId().contains("sphere") || node->getAssetId().contains("camera"))
+			continue;
+		importantNode22s.push_back(node->getAssetId());
+		importantNode2s2s.push_back(node->name());
 
 		importantNodes.push_back(node->getWSBoundingBox());
+
 	}
 	return importantNodes;
 }
-
+// kad se vratis radi ovo obavezno!!! zavrsi POVs i pocni da radis genetic algorithm
 bool VCCPane::IsChildOf(DzNode *n, QString name)
 {
 	DzNode *node = n;
+
 	while (!node->isRootNode())
 	{
 		node = node->getNodeParent();
-		if (node->getAssetId() == name) return true;
+		if (node->getAssetId().contains(name))
+			return true;
 	}
 	return false;
 }
@@ -198,7 +438,8 @@ void VCCPane::Run()
 	{
 		DzNode *node = iter.next();
 
-		if (!node->getAssetId().contains("sphere"))  continue;
+		if (!node->getAssetId().contains("sphere"))
+			continue;
 
 		node->setWSPos(v[index]);
 
@@ -212,68 +453,42 @@ void VCCPane::Run()
 
 void VCCPane::Run2()
 {
-	DzVec3 *v = p->Run();
+	int index = dropbtn->currentIndex();
+
+	DzBasicCamera *c = new DzBasicCamera();
+	c->setName("camera");
+
 	DzNodeListIterator iter = dzScene->nodeListIterator();
 
-	int index = 0;
+	int indexx = 0;
 
-	while (index < 100)
+	while (indexx < 100)
 	{
-		DzNode *node = iter.next();
+		DzNode *nodee = iter.next();
 
-		if (!node->getAssetId().contains("sphere"))  continue;
+		if (!nodee->getAssetId().contains("sphere"))  continue;
 
-		node->setWSPos(v[index]);
+		nodee->setWSPos(p->vecPoints[indexx]);
 
-		index++;
+		indexx++;
 	}
+	c->setWSPos(p->GetBestPoint());
+	c->aimAt(p->_point);
+	dzScene->addNode(c);
 }
 
 void VCCPane::GenerateCamera()
 {
 	int index = dropbtn->currentIndex();
-	switch (index)
-	{
-	case 0:
-		break;
-	case 1:
-		break;
-	default:
-		break;
-	}
-
-	unsigned int start = clock();
-	DzVec3 points[8];
-
-	DzNode *n = dzScene->findNode("head");
-	DzVec3 pnt = n->getWSPos();
-	n->getWSOrientedBox().getPoints(points);
 
 	DzBasicCamera *c = new DzBasicCamera();
-	c->setName("nova kamera");
-	c->setWSPos(GeneratePerfectPoint(ShotType::CloseUp));
-	c->aimAt(n->getWSPos());
-	//n->addNodeChild(c);
-	DzVec3 pnt2 = n->getWSBoundingBox().getCenter();
+	c->setName("camera");
+	unsigned int start = clock();
+
+	DzVec3 vec = GeneratePerfectPoint((ShotType)index, c);
 
 
-	DzVec3 newPoints[4];
-	GetFourPoints(c->getWSPos(), newPoints, points);
-	DzVec3 min = c->getWSBoundingBox().getMin();
-	DzVec3 max = c->getWSBoundingBox().getMax() * 2;
-	//min.m_x *= 10;
-	//max.m_x *= 10;
-
-	DzVec3 dir = DzVec3(c->getWSBoundingBox().getCenter() - n->getWSBoundingBox().getCenter()).normalized();
-
-	float angle = dir.getAngleTo(dir);
-	DzBox3 box = DzBox3(c->getWSPos().m_x - 200, c->getWSPos().m_y - 200, c->getWSPos().m_z - 200, c->getWSPos().m_x + 200, c->getWSPos().m_y + 200, c->getWSPos().m_z + 200);
-
-	p = new ParticleSwarmOptimization(dir, n->getWSBoundingBox().getCenter(), box.getMin(), box.getMax(), newPoints, GetImportantNodes(&dzScene->nodeListIterator()));
-
-	DzVec3 vec = p->GetBestPoint();
-	c->setWSPos(vec);
-	c->aimAt(n->getWSPos());
+	//c->setWSPos(vec);
 	//dzScene->addNode(c);
 	unsigned int a = clock() - start;
 	DzNodeListIterator iter = dzScene->nodeListIterator();
@@ -290,6 +505,7 @@ void VCCPane::GenerateCamera()
 
 		indexx++;
 	}
+
 	m_output->append(QString::number(a));
 
 	//std::random_device rd;
@@ -306,12 +522,7 @@ void VCCPane::GenerateCamera()
 	//	vec->m_y = y(gen);
 	//	vec->m_z = z(gen);
 
-	//	DzBasicCamera *cc = new DzBasicCamera();
-	//	cc->setName("nova kamera");
-	//	cc->setWSPos(*vec);
-	//	cc->aimAt(n->getWSPos());
-	//	dzScene->addNode(cc);
-	//}
+	dzScene->addNode(c);
 }
 
 DzNodeListIterator *RemoveItemFromList(DzNodeListIterator *lst, QList<QString> items)

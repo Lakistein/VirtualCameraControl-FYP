@@ -1,20 +1,19 @@
 #include <dzvec3.h>
 
-class Particle
+class Chromosome
 {
 public:
-	Particle();
-	Particle(DzVec3 pos, DzVec3 vel, float fit);
-	~Particle();
+	Chromosome();
+	Chromosome(DzVec3 pos, float fitness);
+	~Chromosome();
 
 	float Distance(DzVec3);
 	DzVec3 currPos;
 	DzVec3 lBestPos;
 
-	DzVec3 velocity;
-
+	float fitness;
 	float bestAngle;
 	float bestDistance;
-	int fitness;
+	int localBest;
 };
 

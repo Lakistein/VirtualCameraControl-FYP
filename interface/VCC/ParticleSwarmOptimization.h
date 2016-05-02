@@ -16,15 +16,15 @@ class ParticleSwarmOptimization
 {
 public:
 	int _gBest, _numOfParticles;
-	DzVec3 _gBestPos, _point, _dirPOI, _min, _max;
-	float _gBestAngle, _preferableAngle, _maxAngle, _preferableDistance, _maxDistance, _minDistance;
+	DzVec3 _gBestPos, _point, _dirPOI, _min, _max, _bestPoint;
+	float _fitness, _gBestAngle, _preferableAngle, _maxAngle, _preferableDistance, _maxDistance, _minDistance, _gBestDistance, _preferedDistance;
 	double c0, c1, c2, r1, r2;
 	std::list<DzBox3> _nodes;
-	ParticleSwarmOptimization(const DzVec3 dirPOI, const DzVec3 p, const DzVec3 min, const DzVec3 max, const DzVec3 points[4], std::list<DzBox3> nodes);
+	ParticleSwarmOptimization(const DzVec3 bestPoint, const DzVec3 dirPOI, const DzVec3 p, const DzVec3 min, const DzVec3 max, const DzVec3 points[9], std::list<DzBox3> nodes);
 	~ParticleSwarmOptimization();
-	int ParticleSwarmOptimization::Error(const DzVec3 * origin, const DzVec3 * points, std::list<DzBox3> nodes);
+	int ParticleSwarmOptimization::Fitness(const DzVec3* origin, const DzVec3* p, const DzVec3 points[9], std::list<DzBox3> nodes);
 	Particle _particles[100];
-	DzVec3 _points[4];
+	DzVec3 _points[9];
 	DzVec3 GetBestPoint();
 	DzVec3 vecPoints[100];
 

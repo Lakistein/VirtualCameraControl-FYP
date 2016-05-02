@@ -263,6 +263,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CameraControl.cpp" />
+    <ClCompile Include="Chromosome.cpp" />
+    <ClCompile Include="GeneticAlgorithm.cpp" />
     <ClCompile Include="Particle.cpp" />
     <ClCompile Include="ParticleSwarmOptimization.cpp" />
     <ClCompile Include="VCCPane.cpp">
@@ -333,6 +335,8 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\%(Filename)_moc.cpp</Outputs>
     </CustomBuild>
     <ClInclude Include="CameraControl.h" />
+    <ClInclude Include="Chromosome.h" />
+    <ClInclude Include="GeneticAlgorithm.h" />
     <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleSwarmOptimization.h" />
     <ClInclude Include="version.h" />
