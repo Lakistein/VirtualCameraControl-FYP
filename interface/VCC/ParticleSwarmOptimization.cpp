@@ -2,8 +2,6 @@
 
 ParticleSwarmOptimization::ParticleSwarmOptimization(const DzVec3 bestPoint, const DzVec3 dirPOI, const DzVec3 p, const DzVec3 min, const DzVec3 max, const DzVec3 points[9], std::list<DzBox3> nodes)
 {
-	_gBest = 1000;
-	_gBestAngle = 1000;
 	_gBestPos = DzVec3();
 	_nodes = nodes;
 	_point = p;
@@ -11,18 +9,17 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(const DzVec3 bestPoint, con
 	_min = min;
 	_max = max;
 	_numOfParticles = 100;
-	_gBestDistance = 100000;
 	_preferableDistance = sqrt(pow(_point.m_x - bestPoint.m_x, 2) + pow(_point.m_y - bestPoint.m_y, 2) + pow(_point.m_z - bestPoint.m_z, 2));
 	_bestPoint = bestPoint;
 	_fitness = 9999;
 	c0 = 0.8;
-	c1 = 0.9;
-	c2 = 1.2;
+	c1 = 1.6;
+	c2 = 2.4;
 	for (int i = 0; i < 9; i++)
 	{
 		_points[i] = points[i];
 	}
-	int fit = Fitness(&_bestPoint, &p, _points, _nodes);
+	float fit = Fitness(&_bestPoint, &p, _points, _nodes);
 	if (fit == 0) {
 		_gBestPos = _bestPoint;
 		_fitness = fit;
@@ -59,7 +56,6 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(const DzVec3 bestPoint, con
 			_particles[i] = particle;
 			this->vecPoints[i] = vec;
 		}
-
 		Run();
 	}
 }
@@ -68,7 +64,7 @@ ParticleSwarmOptimization::~ParticleSwarmOptimization()
 {
 }
 
-int ParticleSwarmOptimization::Fitness(const DzVec3* origin, const DzVec3* p, const DzVec3 points[9], std::list<DzBox3> nodes)
+float ParticleSwarmOptimization::Fitness(const DzVec3* origin, const DzVec3* p, const DzVec3 points[9], std::list<DzBox3> nodes)
 {
 	int intersetcionts = 0;
 	float angle = _dirPOI.getAngleTo(DzVec3(*origin - *p)) * 180.0 / 3.14159265358979323846;
@@ -109,7 +105,7 @@ DzVec3* ParticleSwarmOptimization::Run()
 	std::mt19937 gen(rd());
 	std::uniform_real<> rnd(0.1, 1);
 	Particle *p;
-	for (int j = 0; j < 0; j++)
+	for (int j = 0; j < 100; j++)
 	{
 		for (int i = 0; i < _numOfParticles; i++)
 		{
@@ -132,15 +128,6 @@ DzVec3* ParticleSwarmOptimization::Run()
 
 			vecPoints[i] = p->currPos;
 			int fit = Fitness(&p->currPos, &_point, _points, _nodes);
-			
-			// GLOBAL
-
-			if (fit < _fitness)
-			{
-				_fitness = fit;
-				_gBestPos = p->lBestPos = p->currPos;
-				continue;
-			}
 
 			// LOCAL
 
@@ -148,6 +135,24 @@ DzVec3* ParticleSwarmOptimization::Run()
 			{
 				p->fitness = fit;
 				p->lBestPos = p->currPos;
+			}
+			else
+			{
+				continue;
+			}
+
+			// GLOBAL
+
+			if (fit < _fitness)
+			{
+				_fitness = fit;
+				_gBestPos = p->lBestPos = p->currPos;
+
+				if (fit < 0.1)
+				{
+					return vecPoints;
+				}
+
 				continue;
 			}
 		}
@@ -156,84 +161,12 @@ DzVec3* ParticleSwarmOptimization::Run()
 	return vecPoints;
 }
 
-DzVec3 * ParticleSwarmOptimization::GetDirectionVector(const DzVec3 * a, const DzVec3 * b)
-{
-	return nullptr;
-}
-
 float ParticleSwarmOptimization::GetAngle(const DzVec3 * A, const DzVec3 * B)
 {
 	return acos(A->dot(*B) / (A->length() * B->length())) * 180.0 / 3.14159265358979323846;
 }
 
-//float ParticleSwarmOptimization::GetAngle(const DzVec3 * A, const DzVec3 * B)
-//{
-//	return acos(A->dot(*B)) * 180.0 / 3.14159265358979323846;
-//}
-
 void ParticleSwarmOptimization::SetNumberOfParticles(int num)
 {
-}
-
-void ParticleSwarmOptimization::SetDirectionVectorOfPOI(const DzVec3 * vec)
-{
-}
-
-void ParticleSwarmOptimization::SetNumberOfPoints(int num)
-{
-}
-
-void ParticleSwarmOptimization::SetCenterPoint(const DzVec3 * point)
-{
-}
-#include <ctime>
-
-DzVec3* ParticleSwarmOptimization::Run2()
-{
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real<> rnd(0.1, 1);
-	Particle *p;
-	for (int i = 0; i < 1; i++)
-		for (int i = 0; i < _numOfParticles; i++)
-		{
-			p = &_particles[i];
-			DzVec3 vel = c0 * p->velocity
-				+ (c1 * rnd(gen) * (p->lBestPos - p->currPos))
-				+ (c2 * rnd(gen) * (_gBestPos - p->currPos));
-
-			p->velocity = vel;
-			p->currPos = p->currPos + p->velocity;
-
-			if (p->currPos.m_x > _max.m_x) p->currPos.m_x = _max.m_x;
-			else if (p->currPos.m_x < _min.m_x) p->currPos.m_x = _min.m_x;
-
-			if (p->currPos.m_y > _max.m_y) p->currPos.m_y = _max.m_y;
-			else if (p->currPos.m_y < _min.m_y) p->currPos.m_y = _min.m_y;
-
-			if (p->currPos.m_z > _max.m_z) p->currPos.m_z = _max.m_z;
-			else if (p->currPos.m_z < _min.m_z) p->currPos.m_z = _min.m_z;
-
-			vecPoints[i] = p->currPos;
-			int fit = Fitness(&p->currPos, &_point, _points, _nodes);
-
-			// GLOBAL
-
-			if (fit < _fitness)
-			{
-				_fitness = fit;
-				_gBestPos = p->lBestPos = p->currPos;
-				continue;
-			}
-
-			// LOCAL
-
-			if (fit < p->fitness)
-			{
-				p->fitness = fit;
-				p->lBestPos = p->currPos;
-				continue;
-			}
-		}
-	return vecPoints;
+	_numOfParticles = num;
 }

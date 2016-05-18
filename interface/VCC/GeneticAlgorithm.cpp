@@ -2,12 +2,14 @@
 #include <list>
 #include <vector>
 
+GeneticAlgorithm::GeneticAlgorithm()
+{
+
+}
 
 GeneticAlgorithm::GeneticAlgorithm(const DzVec3 bestPoint, const DzVec3 dirPOI, const DzVec3 p, const DzVec3 min, const DzVec3 max, const DzVec3 points[9], std::list<DzBox3> nodes)
 {
 	_gBestFitness = 99999;
-	_gBest = 1000;
-	_gBestAngle = 1000;
 	_gBestPos = DzVec3();
 	_nodes = nodes;
 	_point = p;
@@ -15,19 +17,23 @@ GeneticAlgorithm::GeneticAlgorithm(const DzVec3 bestPoint, const DzVec3 dirPOI, 
 	_min = min;
 	_max = max;
 	_numOfChromo = 100;
-	_gBestDistance = 100000;
 	_bestPoint = bestPoint;
 	_preferableDistance = sqrt(pow(_point.m_x - bestPoint.m_x, 2) + pow(_point.m_y - bestPoint.m_y, 2) + pow(_point.m_z - bestPoint.m_z, 2));
+
 	for (int i = 0; i < 9; i++)
 	{
 		_points[i] = points[i];
 	}
+
 	float fit = Fitness(_bestPoint, _point, _points, _nodes);
-	if (fit == 0) {
+
+	if (fit == 0) 
+	{
 		_fitness = 0;
 		_gBestPos = _bestPoint;
 	}
-	else {
+	else 
+	{
 		// Random generator initializator
 		std::random_device rd;
 		std::default_random_engine gen(rd());
@@ -42,7 +48,8 @@ GeneticAlgorithm::GeneticAlgorithm(const DzVec3 bestPoint, const DzVec3 dirPOI, 
 			vec.m_x = x(gen);
 			vec.m_y = y(gen);
 			vec.m_z = z(gen);
-			if (_max.m_x <= vec.m_x && vec.m_x <= _min.m_x && _max.m_y <= vec.m_y && vec.m_y <= _min.m_y && _max.m_z <= vec.m_z && vec.m_z <= _min.m_z) {
+			if (_max.m_x <= vec.m_x && vec.m_x <= _min.m_x && _max.m_y <= vec.m_y && vec.m_y <= _min.m_y && _max.m_z <= vec.m_z && vec.m_z <= _min.m_z) 
+			{
 				i--;
 				continue;
 			}
@@ -61,26 +68,11 @@ GeneticAlgorithm::GeneticAlgorithm(const DzVec3 bestPoint, const DzVec3 dirPOI, 
 		Run();
 	}
 }
-//DzVec3 RandomPoint(DzVec3 min, DzVec3 max) {
-//
-//	// Random generator initializator
-//	std::random_device rd;
-//	std::default_random_engine gen(rd());
-//	std::uniform_real<> x(min.m_x, max.m_x);
-//	std::uniform_real<> y(min.m_y, max.m_y);
-//	std::uniform_real<> z(min.m_z, max.m_z);
-//
-//	DzVec3 vec = DzVec3();
-//	vec.m_x = x(gen);
-//	vec.m_y = y(gen);
-//	vec.m_z = z(gen);
-//}
 
 float GeneticAlgorithm::Fitness(const DzVec3 origin, const DzVec3 p, const DzVec3 points[9], std::list<DzBox3> nodes)
 {
 	int intersetcionts = 0;
-	float angle = _dirPOI.getAngleTo(DzVec3(origin - p)) * 180.0 / 3.14159265358979323846;
-	angle = angle / 45;
+	float angle = (_dirPOI.getAngleTo(DzVec3(origin - p)) * 180.0 / 3.14159265358979323846) / 45;
 	bool intersect[9] = { false };
 	DzLine3 line = DzLine3(origin, origin);
 	std::list<DzBox3> ::iterator node;
@@ -96,7 +88,7 @@ float GeneticAlgorithm::Fitness(const DzVec3 origin, const DzVec3 p, const DzVec
 				intersect[i] = true;
 				intersetcionts++;
 
-				if (intersetcionts == 8)
+				if (intersetcionts == 9)
 					break;
 			}
 		}
@@ -118,23 +110,8 @@ Chromosome GeneticAlgorithm::MakeChild(Chromosome father, Chromosome mother)
 	std::uniform_real<> x, y, z;
 	std::default_random_engine gen(rd());
 
-	/*if (father.currPos.m_x < mother.currPos.m_x)
-		std::uniform_real<> x(father.currPos.m_x, mother.currPos.m_x);
-	else
-		std::uniform_real<> x(mother.currPos.m_x, father.currPos.m_x);
-
-	if (father.currPos.m_y < mother.currPos.m_y)
-		std::uniform_real<> y(father.currPos.m_y, mother.currPos.m_y);
-	else
-		std::uniform_real<> y(mother.currPos.m_y, father.currPos.m_y);
-
-	if (father.currPos.m_z < mother.currPos.m_z)
-		std::uniform_real<> z(father.currPos.m_z, mother.currPos.m_z);
-	else
-		std::uniform_real<> z(mother.currPos.m_z, father.currPos.m_z);*/
 	DzVec3 dir = (mother.currPos - father.currPos).normalized();
 	std::uniform_real<> m(0, sqrt(pow(father.currPos.m_x - mother.currPos.m_x, 2) + pow(father.currPos.m_y - mother.currPos.m_y, 2) + pow(father.currPos.m_z - mother.currPos.m_z, 2)));
-
 
 	float gg = m(gen);
 	DzVec3 vec = father.currPos + dir * gg;
@@ -190,7 +167,7 @@ DzVec3* GeneticAlgorithm::Run()
 	// selection
 
 	int generation = 0;
-	while (/*_gBestFitness > 0.1 || */generation < 20)
+	while (/*_gBestFitness > 0.1 || */generation < 100)
 	{
 		std::sort(_chromosomes.begin(), _chromosomes.end(), CompareChromosomes());
 

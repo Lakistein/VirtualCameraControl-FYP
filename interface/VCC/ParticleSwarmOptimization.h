@@ -15,14 +15,14 @@
 class ParticleSwarmOptimization
 {
 public:
-	int _gBest, _numOfParticles;
+	int _numOfParticles;
 	DzVec3 _gBestPos, _point, _dirPOI, _min, _max, _bestPoint;
-	float _fitness, _gBestAngle, _preferableAngle, _maxAngle, _preferableDistance, _maxDistance, _minDistance, _gBestDistance, _preferedDistance;
+	float _fitness, _preferableDistance;
 	double c0, c1, c2, r1, r2;
 	std::list<DzBox3> _nodes;
 	ParticleSwarmOptimization(const DzVec3 bestPoint, const DzVec3 dirPOI, const DzVec3 p, const DzVec3 min, const DzVec3 max, const DzVec3 points[9], std::list<DzBox3> nodes);
 	~ParticleSwarmOptimization();
-	int ParticleSwarmOptimization::Fitness(const DzVec3* origin, const DzVec3* p, const DzVec3 points[9], std::list<DzBox3> nodes);
+	float ParticleSwarmOptimization::Fitness(const DzVec3* origin, const DzVec3* p, const DzVec3 points[9], std::list<DzBox3> nodes);
 	Particle _particles[100];
 	DzVec3 _points[9];
 	DzVec3 GetBestPoint();
@@ -30,14 +30,7 @@ public:
 
 	DzVec3* Run();
 
-	DzVec3 *GetDirectionVector(const DzVec3 *a, const DzVec3 *b);
 	float GetAngle(const DzVec3 *A, const DzVec3 *B);
 	void SetNumberOfParticles(int num);
-	void SetDirectionVectorOfPOI(const DzVec3 *vec);
-	void SetNumberOfPoints(int num);
-	void SetCenterPoint(const DzVec3 *point);
-	DzVec3* Run2();
-private:
-	//int numOfPoints;
 };
 #endif

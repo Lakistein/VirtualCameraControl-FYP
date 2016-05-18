@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'VCCPane.h'
 **
-** Created: Sun 1. May 16:23:41 2016
+** Created: Tue 17. May 19:18:41 2016
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -84,7 +84,7 @@ static const uint qt_meta_data_VCCPane[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       3,   14, // methods
+       1,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -93,14 +93,12 @@ static const uint qt_meta_data_VCCPane[] = {
 
  // slots: signature, parameters, type, tag, flags
        9,    8,    8,    8, 0x08,
-      26,    8,    8,    8, 0x08,
-      32,    8,    8,    8, 0x08,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_VCCPane[] = {
-    "VCCPane\0\0GenerateCamera()\0Run()\0Run2()\0"
+    "VCCPane\0\0GenerateCamera()\0"
 };
 
 void VCCPane::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -110,8 +108,6 @@ void VCCPane::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, voi
         VCCPane *_t = static_cast<VCCPane *>(_o);
         switch (_id) {
         case 0: _t->GenerateCamera(); break;
-        case 1: _t->Run(); break;
-        case 2: _t->Run2(); break;
         default: ;
         }
     }
@@ -150,9 +146,9 @@ int VCCPane::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 3)
+        if (_id < 1)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 3;
+        _id -= 1;
     }
     return _id;
 }
