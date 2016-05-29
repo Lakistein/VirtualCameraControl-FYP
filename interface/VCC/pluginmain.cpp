@@ -32,8 +32,8 @@ DZ_PLUGIN_AUTHOR( "Lazar Lazarevic" );
 DZ_PLUGIN_VERSION( PLUGIN_MAJOR, PLUGIN_MINOR, PLUGIN_REV, PLUGIN_BUILD );
 
 DZ_PLUGIN_DESCRIPTION(
-	"Some description"
+	"Virtual Camera Control is a plugin for automatic camera positioing for taking various types of shot including extreme close-up, face close-up, medium body shot, full body shot, bird's eye view, worm's  eye view and high angle."
 	);
 
-DZ_PLUGIN_CLASS_GUID( VCCPane, B833CC13-F88D-4fd2-8C95-F82D0BF3A5D0 );
+DZ_PLUGIN_CLASS_GUID( VCCPane, 74F1805A-D409-469B-8018-4FB6E33F6CD2);
 DZ_PLUGIN_CLASS_GUID( VCCPaneAction, 295A67A3-0442-42d0-9F03-F675799D7573 );

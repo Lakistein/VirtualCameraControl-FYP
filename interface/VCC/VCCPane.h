@@ -16,11 +16,12 @@
 class QTextBrowser;
 class DzNode;
 
-
 class VCCPaneAction : public DzPaneAction {
 	Q_OBJECT
 public:
-	VCCPaneAction() : DzPaneAction("VCCPane") { }
+	VCCPaneAction() : DzPaneAction("VCCPane") { 
+	
+	}
 };
 
 class VCCPane : public DzPane {

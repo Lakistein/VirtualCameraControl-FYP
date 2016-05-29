@@ -10,6 +10,7 @@ class CameraControl
 {
 public:
 	CameraControl();
+	CameraControl(QString text);
 	CameraControl(DzVec3);
 	~CameraControl();
 	
@@ -34,16 +35,7 @@ public:
 	void CreateNewCamera(DzVec3, DzQuat);
 	void Reset(DzBasicCamera);
 
-	//void GetRegularFaceCloseUp(DzBasicCamera *, const DzNode);
-	//void GetMediumFaceCloseUp(DzBasicCamera *, const DzNode);
-	//void GetExtremeFaceCloseUp(DzBasicCamera *, const DzNode);
-	//void GetRegularBodyShot(DzBasicCamera *, const DzNode);
-	//void GetLongBodyShot(DzBasicCamera *, const DzNode);
-	//void GetExtraLongBodyShot(DzBasicCamera *, const DzNode);
-	//void GetBirdsEyeView(DzBasicCamera *, const DzNode);
-	//void GetWormView(DzBasicCamera *, const DzNode);
-	void GetShot(DzScene *scene, ShotType s, DzNode * node, Algorithm a = PSO);
-	DzVec3 *GetPoints();
+	void GetShot(DzScene *scene, ShotType s, DzNode * node, QString text, Algorithm a = PSO);
 	ParticleSwarmOptimization *p;
 	Algorithm al;
 private:

@@ -11,7 +11,7 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(const DzVec3 bestPoint, con
 	_numOfParticles = 100;
 	_preferableDistance = sqrt(pow(_point.m_x - bestPoint.m_x, 2) + pow(_point.m_y - bestPoint.m_y, 2) + pow(_point.m_z - bestPoint.m_z, 2));
 	_bestPoint = bestPoint;
-	_fitness = 9999;
+	_fitness = FLT_MAX;
 	c0 = 0.8;
 	c1 = 1.6;
 	c2 = 2.4;
@@ -54,9 +54,8 @@ ParticleSwarmOptimization::ParticleSwarmOptimization(const DzVec3 bestPoint, con
 			}
 			Particle particle = Particle(vec, vel, fit);
 			_particles[i] = particle;
-			this->vecPoints[i] = vec;
 		}
-		Run();
+		Search();
 	}
 }
 
@@ -99,7 +98,7 @@ DzVec3 ParticleSwarmOptimization::GetBestPoint()
 	return _gBestPos;
 }
 
-DzVec3* ParticleSwarmOptimization::Run()
+DzVec3* ParticleSwarmOptimization::Search()
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -126,7 +125,6 @@ DzVec3* ParticleSwarmOptimization::Run()
 			if (p->currPos.m_z > _max.m_z) p->currPos.m_z = _max.m_z;
 			else if (p->currPos.m_z < _min.m_z) p->currPos.m_z = _min.m_z;
 
-			vecPoints[i] = p->currPos;
 			int fit = Fitness(&p->currPos, &_point, _points, _nodes);
 
 			// LOCAL
@@ -150,7 +148,7 @@ DzVec3* ParticleSwarmOptimization::Run()
 
 				if (fit < 0.1)
 				{
-					return vecPoints;
+					return &_gBestPos;
 				}
 
 				continue;
@@ -158,7 +156,7 @@ DzVec3* ParticleSwarmOptimization::Run()
 		}
 	}
 
-	return vecPoints;
+	return &_gBestPos;
 }
 
 float ParticleSwarmOptimization::GetAngle(const DzVec3 * A, const DzVec3 * B)

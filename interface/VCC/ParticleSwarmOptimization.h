@@ -26,9 +26,8 @@ public:
 	Particle _particles[100];
 	DzVec3 _points[9];
 	DzVec3 GetBestPoint();
-	DzVec3 vecPoints[100];
 
-	DzVec3* Run();
+	DzVec3* Search();
 
 	float GetAngle(const DzVec3 *A, const DzVec3 *B);
 	void SetNumberOfParticles(int num);

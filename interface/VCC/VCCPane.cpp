@@ -19,15 +19,6 @@
 #include <dzorientedbox3.h>
 #include <dznodebtn.h>
 
-namespace patch
-{
-	template < typename T > std::string to_string(const T& n)
-	{
-		std::ostringstream stm;
-		stm << n;
-		return stm.str();
-	}
-}
 static const int c_minWidth = 200;
 static const int c_minHeight = 150;
 
@@ -53,7 +44,7 @@ VCCPane::VCCPane() : DzPane("Virtual Camera Control")
 	dropbtn = new QComboBox(this);
 	dropbtn->addItem("Extreme Close-Up");
 	dropbtn->addItem("Face Close-Up");
-	dropbtn->addItem("Mid Body");
+	dropbtn->addItem("Mid Body Shot");
 	dropbtn->addItem("Full Body Shot");
 	dropbtn->addItem("Bird's Eye View");
 	dropbtn->addItem("Worm's Eye View");
@@ -68,13 +59,9 @@ VCCPane::VCCPane() : DzPane("Virtual Camera Control")
 	QPushButton *btnGenerate = new QPushButton("Generate Camera", this, "Test Name");
 	mainLyt->addWidget(btnGenerate);
 
-	QPushButton *run = new QPushButton("Run step by step", this, "Test Name");
-	mainLyt->addWidget(run);
-
 	setLayout(mainLyt);
 
 	connect(btnGenerate, SIGNAL(pressed()), this, SLOT(GenerateCamera()));
-	connect(run, SIGNAL(pressed()), this, SLOT(Run()));
 
 	setMinimumSize(c_minWidth, c_minHeight);
 }
@@ -88,34 +75,20 @@ void VCCPane::GenerateCamera()
 {
 	m_output->clear();
 	int index = dropbtn->currentIndex();
-	cc = new CameraControl();
+	cc = new CameraControl(dropbtn->text(dropbtn->currentIndex()));
 
-	unsigned int start = clock();
 
 	if (nodeBtn->getNode() == NULL) 
 	{
 		m_output->append("Node Not Selected");
 		return;
 	}
+	
+	unsigned int start = clock();
 
-	cc->GetShot(dzScene, (CameraControl::ShotType)index, nodeBtn->getNode(), /*CameraControl::Algorithm::GA*/(CameraControl::Algorithm)algBtn->currentIndex());
+	cc->GetShot(dzScene, (CameraControl::ShotType)index, nodeBtn->getNode(), dropbtn->text(dropbtn->currentIndex()), (CameraControl::Algorithm)algBtn->currentIndex());
 
 	unsigned int a = clock() - start;
-
-	DzNodeListIterator iter = dzScene->nodeListIterator();
-
-	int indexx = 0;
-	DzVec3 *points = cc->GetPoints();
-
-	while (indexx < 100)
-	{
-		DzNode *nodee = iter.next();
-
-		if (!nodee->getAssetId().contains("sphere"))  continue;
-		nodee->setWSPos(points[indexx]);
-
-		indexx++;
-	}
 
 	m_output->append(QString::number(a));
 }

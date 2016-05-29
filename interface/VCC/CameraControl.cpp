@@ -2,8 +2,13 @@
 
 CameraControl::CameraControl()
 {
+
+}
+
+CameraControl::CameraControl(QString text)
+{
 	cam = new DzBasicCamera();
-	cam->setName("Camera");
+	cam->setName(text + " Camera");
 }
 
 CameraControl::CameraControl(const DzVec3 pos)
@@ -86,7 +91,7 @@ void CameraControl::Reset(DzBasicCamera)
 {
 }
 
-void CameraControl::GetShot(DzScene * scene, ShotType s, DzNode * node, Algorithm a)
+void CameraControl::GetShot(DzScene * scene, ShotType s, DzNode * node, QString text, Algorithm a)
 {
 	DzVec3 point = GeneratePerfectPoint(s, node, scene, a);
 	scene->addNode(cam);
@@ -111,6 +116,7 @@ void CameraControl::GetImportantPoints(DzVec3 point, DzVec3 newPoints[9], DzVec3
 			}
 		}
 	}
+
 	for (int j = 0; j < 4; j++) {
 		newPoints[j] = allPoints[j];
 	}
@@ -147,19 +153,6 @@ std::list<DzBox3> CameraControl::GetImportantNodes(ShotType sht, DzNode & obj, D
 	return importantNodes;
 }
 
-bool IsChildOf(DzNode *n, QString name)
-{
-	DzNode *node = n;
-
-	while (!node->isRootNode())
-	{
-		node = node->getNodeParent();
-		if (node->getAssetId().contains(name))
-			return true;
-	}
-	return false;
-}
-
 DzVec3 CameraControl::GeneratePerfectPoint(ShotType s, DzNode *node, DzScene * scene, Algorithm a)
 {
 	DzVec3 vec;
@@ -170,6 +163,7 @@ DzVec3 CameraControl::GeneratePerfectPoint(ShotType s, DzNode *node, DzScene * s
 	DzVec3 boxMin, boxMax;
 
 	DzNode *n;
+	SetFocalLength(28);
 
 	switch (s)
 	{
@@ -186,6 +180,7 @@ DzVec3 CameraControl::GeneratePerfectPoint(ShotType s, DzNode *node, DzScene * s
 		box.setMin(box.getMin() + dir  * dist);
 		boxMin = box.getMin();
 		boxMax = box.getMax();
+		SetFocalLength(50);
 		break;
 	}
 	case CameraControl::FaceCloseUp: {
@@ -273,9 +268,9 @@ DzVec3 CameraControl::GeneratePerfectPoint(ShotType s, DzNode *node, DzScene * s
 		float dist = 0;
 		camAim = DzVec3();
 		n = node;
-		vec = BirdsEyeViewPoint(n, dist, camAim);
-		dir = DzVec3(vec - n->getWSBoundingBox().getCenter()).normalized();
 		camAim = n->getWSBoundingBox().getCenter();
+		vec = BirdsEyeViewPoint(n, dist, camAim);
+		dir = DzVec3(vec - camAim).normalized();
 
 		n->getWSOrientedBox().getPoints(points);
 		GetImportantPoints(vec, newPoints, points);
@@ -290,9 +285,10 @@ DzVec3 CameraControl::GeneratePerfectPoint(ShotType s, DzNode *node, DzScene * s
 		float dist = 0;
 		camAim = DzVec3();
 		n = node;
-		vec = WormsEyeViewPoint(n, dist, camAim);
-		dir = DzVec3(vec - n->getWSBoundingBox().getCenter()).normalized();
 		camAim = (node->getWSPos() + n->getWSBoundingBox().getCenter()) / 1.2;
+
+		vec = WormsEyeViewPoint(n, dist, camAim);
+		dir = DzVec3(vec - camAim).normalized();
 
 
 		n->getWSOrientedBox().getPoints(points);
@@ -328,7 +324,6 @@ DzVec3 CameraControl::GeneratePerfectPoint(ShotType s, DzNode *node, DzScene * s
 
 	cam->setWSPos(bestPoint);
 	cam->aimAt(camAim);
-	SetFocalLength(28);
 	return bestPoint;
 }
 
@@ -340,18 +335,14 @@ DzVec3 CameraControl::ExtremeCloseUpPoint(DzNode *head, float &dist, DzVec3 & ca
 	camAimAt = p;
 
 	head->setWSRot(DzQuat(0, 0, 0, 0));
-	float w = abs(head->getLocalBoundingBox().getMax().m_x - head->getLocalBoundingBox().getMin().m_x);
 	float h = abs(head->getLocalBoundingBox().getMax().m_y - head->getLocalBoundingBox().getMin().m_y);
 	head->setWSRot(temp);
 	DzNode *newNode = new DzNode();
-	DzQuat r = head->getLocalRot();
-	DzQuat rr = head->getWSRot();
 	newNode->setWSTransform(p, head->getWSRot(), head->getWSScale());
 
 	head->addNodeChild(newNode, true);
-	float t = h / 2;
+	float t = h / 1.8;
 	newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
-	//dzScene->findNodeByLabel("pp")->setWSTransform(newNode->getWSPos(), newNode->getWSRot(), newNode->getLocalScale());
 
 	dist = t;
 	DzVec3 point = newNode->getWSPos();
@@ -363,13 +354,12 @@ DzVec3 CameraControl::ExtremeCloseUpPoint(DzNode *head, float &dist, DzVec3 & ca
 DzVec3 CameraControl::FaceCloseUpPoint(DzNode * head, float &dist, DzVec3 & camAimAt) {
 	DzQuat temp = head->getWSRot();
 	head->setWSRot(DzQuat(0, 0, 0, 0));
-	float w = abs(head->getLocalBoundingBox().getMax().m_x - head->getLocalBoundingBox().getMin().m_x);
 	float h = abs(head->getLocalBoundingBox().getMax().m_y - head->getLocalBoundingBox().getMin().m_y);
 	head->setWSRot(temp);
 	DzNode *newNode = new DzNode();
 	newNode->setWSTransform(head->getWSBoundingBox().getCenter(), head->getWSRot(), head->getWSScale());
 	head->addNodeChild(newNode);
-	float t = h * 2.5;
+	float t = h * 0.8;
 	dist = t;
 	newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
 	DzVec3 point = newNode->getWSPos();
@@ -397,19 +387,18 @@ DzVec3 CameraControl::MidBodyPoint(DzNode *node, float &dist, DzVec3 & camAimAt)
 	delete(newNode);
 	return point;
 }
-
+ 
 DzVec3 CameraControl::FullBodyShotPoint(DzNode * node, float &dist, DzVec3 & camAimAt)
 {
 	DzQuat temp = node->getWSRot();
 	node->setWSRot(DzQuat(0, 0, 0, 0));
 	camAimAt = node->getWSBoundingBox().getCenter();
-	float w = abs(node->getLocalBoundingBox().getMax().m_x - node->getLocalBoundingBox().getMin().m_x);
 	float h = abs(node->getLocalBoundingBox().getMax().m_y - node->getLocalBoundingBox().getMin().m_y);
 	node->setWSRot(temp);
 	DzNode *newNode = new DzNode();
 	newNode->setWSTransform(node->getWSBoundingBox().getCenter(), node->getWSRot(), node->getWSScale());
 	node->addNodeChild(newNode, true);
-	float t = h * 2;
+	float t = h;
 	dist = t;
 	newNode->setLocalPos(DzVec3(newNode->getLocalPos().m_x, newNode->getLocalPos().m_y, newNode->getLocalPos().m_z + t));
 	DzVec3 point = newNode->getWSPos();
@@ -460,7 +449,6 @@ DzVec3 CameraControl::WormsEyeViewPoint(DzNode * node, float & dist, DzVec3 & ca
 {
 	DzQuat temp = node->getWSRot();
 	node->setWSRot(DzQuat(0, 0, 0, 0));
-	camAimAt = node->getWSBoundingBox().getCenter();
 	float h = abs(node->getLocalBoundingBox().getMax().m_y - node->getLocalBoundingBox().getMin().m_y);
 	node->setWSRot(temp);
 	DzNode *newNode = new DzNode();
@@ -486,17 +474,4 @@ bool CameraControl::IsChildOf(DzNode * n, QString name)
 			return true;
 	}
 	return false;
-}
-
-DzVec3 * CameraControl::GetPoints()
-{
-	switch (al)
-	{
-	case CameraControl::PSO:
-		return p->vecPoints;
-	case CameraControl::GA:
-		return g.vecPoints;
-	default:
-		break;
-	}
 }

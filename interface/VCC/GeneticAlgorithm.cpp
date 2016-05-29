@@ -62,10 +62,9 @@ GeneticAlgorithm::GeneticAlgorithm(const DzVec3 bestPoint, const DzVec3 dirPOI, 
 			}
 			Chromosome chromo = Chromosome(vec, fit);
 			_chromosomes.push_back(chromo);
-			this->vecPoints[i] = vec;
 		}
 
-		Run();
+		Search();
 	}
 }
 
@@ -148,15 +147,18 @@ struct CompareChromosomes
 		return first.fitness < second.fitness;
 	}
 };
+
 bool compareChromo(Chromosome lhs, Chromosome rhs)
 {
 	return lhs.currPos == rhs.currPos;
 }
+
 bool  operator<(const Chromosome  &c1, const Chromosome &c2)
 {
 	return c1.fitness < c2.fitness;
 }
-DzVec3* GeneticAlgorithm::Run()
+
+DzVec3* GeneticAlgorithm::Search()
 {
 	std::random_device rd;
 	std::mt19937 gen(rd());
@@ -164,10 +166,10 @@ DzVec3* GeneticAlgorithm::Run()
 	Chromosome p;
 
 	std::vector<Chromosome> newChromosomes;
-	// selection
 
+	// selection
 	int generation = 0;
-	while (/*_gBestFitness > 0.1 || */generation < 100)
+	while (generation < 100)
 	{
 		std::sort(_chromosomes.begin(), _chromosomes.end(), CompareChromosomes());
 
@@ -180,7 +182,7 @@ DzVec3* GeneticAlgorithm::Run()
 				if (done) break;
 				for (int j = i + 1; j < 5; j++)
 				{
-					numOfNewChildren = Breed(_chromosomes.at(i), _chromosomes.at(j), &newChromosomes, vecPoints, numOfNewChildren);
+					numOfNewChildren = Breed(_chromosomes.at(i), _chromosomes.at(j), &newChromosomes, numOfNewChildren);
 					if (numOfNewChildren == 100) {
 						done = true;
 						break;
@@ -189,17 +191,14 @@ DzVec3* GeneticAlgorithm::Run()
 			}
 		}
 		_chromosomes = std::vector<Chromosome>(newChromosomes.begin(), newChromosomes.end());
-		//_chromosomes.erase(std::unique(_chromosomes.begin(), _chromosomes.end(), compareChromo), _chromosomes.end());
 
 		// Random generator initializator
 		std::uniform_real<> x(_min.m_x, _max.m_x);
 		std::uniform_real<> y(_min.m_y, _max.m_y);
 		std::uniform_real<> z(_min.m_z, _max.m_z);
 		std::vector<Chromosome> s;
-		//std::sort(_chromosomes.begin(), _chromosomes.end(), CompareChromosomes());
 
 		newChromosomes.clear();
-		// Initialize particles
 
 		for (int i = 0; i < 20; i++)
 		{
@@ -221,90 +220,18 @@ DzVec3* GeneticAlgorithm::Run()
 			}
 			Chromosome chromo = Chromosome(vec, fit);
 			_chromosomes.push_back(chromo);
-			this->vecPoints[i] = vec;
 		}
 
 		generation++;
 	}
-	return vecPoints;
+	return &_gBestPos;
 }
 
-DzVec3* GeneticAlgorithm::Run2()
-{
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real<> rnd(0, 20);
-	Chromosome p;
-	int rnd1 = -1, rnd2 = -1;
-	std::vector<Chromosome> newChromosomes;
-	// selection
-	std::sort(_chromosomes.begin(), _chromosomes.end(), CompareChromosomes());
-
-	int numOfNewChildren = 0;
-	//while (numOfNewChildren < 100) {
-	//	rnd1 = rnd(gen);
-	//	rnd2 = rnd(gen);
-
-	//	while (rnd1 == rnd2) {
-	//		rnd2 = rnd(gen);
-	//	}
-	//	numOfNewChildren = Breed(_chromosomes.at(rnd1), _chromosomes.at(rnd2), &newChromosomes, vecPoints, numOfNewChildren);
-	//}
-	bool done = false;
-	for (int i = 0; i < 15; i++)
-	{
-		if (done) break;
-		for (int j = i + 1; j < 15; j++)
-		{
-			numOfNewChildren = Breed(_chromosomes.at(i), _chromosomes.at(j), &newChromosomes, vecPoints, numOfNewChildren);
-			if (numOfNewChildren == 100) {
-				done = true;
-				break;
-			}
-		}
-	}
-
-	_chromosomes = std::vector<Chromosome>(newChromosomes.begin(), newChromosomes.end());
-
-	// Random generator initializator
-	std::uniform_real<> x(_min.m_x, _max.m_x);
-	std::uniform_real<> y(_min.m_y, _max.m_y);
-	std::uniform_real<> z(_min.m_z, _max.m_z);
-	std::sort(_chromosomes.begin(), _chromosomes.end(), CompareChromosomes());
-	newChromosomes.clear();
-	// Initialize particles
-	for (int i = 0; i < 20; i++)
-	{
-		_chromosomes.pop_back();
-	}
-
-	for (int i = 0; i < 20; i++)
-	{
-		DzVec3 vec = DzVec3();
-		vec.m_x = x(gen);
-		vec.m_y = y(gen);
-		vec.m_z = z(gen);
-		float fit = Fitness(vec, _point, _points, _nodes);
-
-		if (fit < _gBestFitness)
-		{
-			_gBestFitness = fit;
-			_gBestPos = vec;
-		}
-		Chromosome chromo = Chromosome(vec, fit);
-		_chromosomes.push_back(chromo);
-		this->vecPoints[i] = vec;
-	}
-	return vecPoints;
-}
-
-
-int GeneticAlgorithm::Breed(Chromosome f, Chromosome m, std::vector<Chromosome> *c, DzVec3 * vecPoints, int num)
+int GeneticAlgorithm::Breed(Chromosome f, Chromosome m, std::vector<Chromosome> *c, int num)
 {
 	Chromosome child = MakeChild(f, m);
 	if (child.fitness == 1000) return num;
 	c->push_back(child);
-	vecPoints[num] = child.currPos;
 	return ++num;
 }
 
